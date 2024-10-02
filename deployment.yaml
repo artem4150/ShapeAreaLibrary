@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+spec:
+  replicas: 3  # 3 пода справляются с нагрузкой
+  selector:
+    matchLabels:
+      app: web-app
+  template:
+    metadata:
+      labels:
+        app: web-app
+    spec:
+      containers:
+      - name: web-app-container
+        image: your-docker-image:latest  # Замените на ваш образ
+        resources:
+          requests:
+            cpu: "0.1"       # Минимальное постоянное потребление CPU
+            memory: "128Mi"  # Постоянное потребление памяти
+          limits:
+            cpu: "1"         # Позволяет использовать до 1 CPU при необходимости
+            memory: "256Mi"  # Задает предел по памяти
+        readinessProbe:
+          httpGet:
+            path: /healthz   # Предполагаемый endpoint для проверки готовности
+            port: 80
+          initialDelaySeconds: 5  # Начало проверки через 5 секунд после запуска
+          periodSeconds: 2       # Частота проверки
+        # Опционально можно добавить livenessProbe
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - web-app
+            topologyKey: "kubernetes.io/hostname"  # Гарантирует, что поды будут на разных нодах
